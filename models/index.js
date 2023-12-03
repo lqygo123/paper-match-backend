@@ -10,8 +10,11 @@ const fileSchema = new mongoose.Schema({
 // duplicateResult schema
 const duplicateResultSchema = new mongoose.Schema({
   biddingFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
+  biddingFileName: String,
   targetFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
+  targetFileName: String,
   skipFileIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'File' }],
+  mode: String,
   result: Object,
   abstract: Object
 });
