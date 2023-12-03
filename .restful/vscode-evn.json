@@ -1,0 +1,10 @@
+{
+  "rest-client.environmentVariables": {
+    "$shared": {
+        "baseUrl": "http://localhost:3000",
+        "jwtTokenB": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYiIsImlkIjoiNjUxM2EwMTcwMDcwYmFlYWFjOGQxNDIxIiwiaWF0IjoxNjk1Nzg0OTgzLCJleHAiOjIwMTEzNjA5ODN9.V3wc0xuUxtRvEEl6XU7VHc_suhMOharaRjnuu5_Gab8",
+        "jwtTokenC": ""
+    }
+  }
+}
+

@@ -1,0 +1,86 @@
+@jwtTokenA=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYSIsImlhdCI6MTY5NTg5NDY2MywiZXhwIjoyMDExNDcwNjYzfQ.XGLjsTvh067Tm5Ty1wZHjin0RVvogRi1QEGy7YCjDMI
+@appointmentId=654ca9062f05feae20c8e3ad
+
+# @baseUrl=http://127.0.0.1:3000
+# @baseUrl=https://test002.sgb.cn
+@baseUrl=https://ecp.sgb.cn
+# @baseUrl=http://113.109.251.164:3000
+
+### A 端获取 token
+POST {{baseUrl}}/api/v1/auditor/login
+Content-Type: application/json
+
+{
+    "username": "root"
+}
+
+### 分页获取 A 端获取待审核预约列表
+GET {{baseUrl}}/api/v1/auditor/appointments?page=1&size=100
+
+
+### 分页获取 A 端获取全部预约列表
+GET {{baseUrl}}/api/v1/auditor/appointments?page=1&size=100
+
+### A 端获取预约详情
+GET {{baseUrl}}/api/v1/auditor/appointment/{{appointmentId}}
+Authorization: {{jwtTokenA}}
+
+### A 端修通过审核
+POST {{baseUrl}}/api/v1/auditor/appointment/audit/{{appointmentId}}
+Content-Type: application/json
+Authorization: {{jwtTokenA}}
+
+{
+    "status": "auditPassed",
+    "auditInfo": {
+        "auditor": "root",
+        "auditRemark": "审核通过"
+    }
+}
+
+### A 端拒绝审核
+POST {{baseUrl}}/api/v1/auditor/appointment/audit/{{appointmentId}}
+Content-Type: application/json
+Authorization: {{jwtTokenA}}
+
+{
+    "status": "auditFailed",
+    "auditInfo": {
+        "auditor": "root",
+        "auditRemark": "审核不通过，没啥特别原因就是不给通过"
+    }
+}
+
+### 测试发送模版消息
+POST {{baseUrl}}/api/v1/auditor/appointment/audit/{{appointmentId}}/sendTemplateMessage
+Content-Type: application/json
+Authorization: {{jwtTokenA}}
+
+{
+    "touser": "oM1OK6yIv_CTwcB67C0FiauXGM78",
+    "template_id": "63L3m4h4tlqkagwVZaile8ZhtgRhsTiyWeKTDxChNAw",
+    "page": "pages/appointment-detail/index?id=awdawdawd",
+    "data": {
+        "time4": {
+            "value": "2021-07-01",
+            "color": "#173177"
+        },
+        "thing5": {
+            "value": "预约成功",
+            "color": "#173177"
+        }
+    }
+}
+
+### 获取某一年日历数据
+POST {{baseUrl}}/api/v1/auditor/appointment/audit/get-calendar/2024
+Content-Type: application/json
+
+### appointment/audit/update-branch
+POST {{baseUrl}}/api/v1/auditor/appointment/audit/update-branch
+Content-Type: application/json
+
+{
+    "_id": "653b41c9d4f6ecf8c5441c79",
+    "branchId": "010751124"
+}
