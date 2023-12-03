@@ -71,5 +71,5 @@ npm-debug.log*
 yarn-error.log*
 
 # static
-# files/
-static/
+files/
+# static/
