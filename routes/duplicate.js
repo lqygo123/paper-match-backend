@@ -146,9 +146,6 @@ router.get("/reports", async (req, res) => {
     if (participateCompany) {
       query["metaInfo.participateCompany"] = { $regex: participateCompany };
     }
-    if (time) {
-      query["metaInfo.time"] = { $regex: time };
-    }
     const reports = (await Report.find(query) || []);
     res.json({ code: 0, message: "获取成功", data: reports });
   } catch (error) {
@@ -170,5 +167,17 @@ router.get("/report/:id", async (req, res) => {
     res.status(500).json({ code: 1, message: "服务器错误", error });
   }
 });
+
+router.post("/get-duplicates", async (req, res) => {
+  try {
+    const { duplicateIds } = req.body;
+    const duplicateResult = await DuplicateResult.find({ _id: { $in: duplicateIds } });
+    res.json({ code: 0, message: "执行成功", data: duplicateResult });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ code: 1, message: "服务器错误", error });
+  }
+})
 
 module.exports = router;
