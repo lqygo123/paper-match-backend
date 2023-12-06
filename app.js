@@ -34,9 +34,10 @@ async function init() {
 app.use(cors());
 app.use(morgan('dev'));
 // app.use(jwtAuth)
+app.use('/static', express.static(path.join(__dirname, "./static")));
 app.use(express.json());
 app.use('/api/v1', routes);
-app.use(express.static(path.join(__dirname, "./static")));
+
 
 app.listen(port, () => {
   console.log(`服务器正在监听端口 ${port}`);

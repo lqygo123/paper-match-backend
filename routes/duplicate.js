@@ -2,16 +2,10 @@ const express = require("express");
 const router = express.Router();
 const path = require("path");
 const fs = require("fs-extra");
-const { File, DuplicateResult, Report } = require("../models");
-const { exec } = require("child_process")
+const { File, DuplicateResult, DuplicateResultDetail, Report } = require("../models");
+const { transfromScan, transfromDigital } = require('../transfrom/transfrom')
 
 const compireFile = async (biddingFilePath, targetFilePath, skipFiles, mode) => {
-  // const { promisify } = require("util");
-  // const execAsync = promisify(exec);
-  // const command = `python3 ./python/compare.py ${biddingFilePath} ${targetFilePath} ${skipFiles}`;
-  // const { stdout, stderr } = await execAsync(command);
-  // return JSON.parse(stdout);
-
   // 先用 mock data
   console.log('compireFile biddingFilePath', biddingFilePath)
   console.log('compireFile targetFilePath', targetFilePath)
@@ -21,7 +15,11 @@ const compireFile = async (biddingFilePath, targetFilePath, skipFiles, mode) => 
 }
 
 const extractAbstract = (result) => {
-  return {}
+  delete result.textRepetitions
+  delete result.imageRepetitions
+  delete result.ocrRepetitions
+  delete result.pdf1Pages
+  return result
 }
 
 router.post("/exec-duplicate", async (req, res) => {
@@ -35,21 +33,37 @@ router.post("/exec-duplicate", async (req, res) => {
       return res.status(404).json({ code: 1, message: "未找到该文件" });
     }
 
-    const compireRes = await compireFile(biddingFile.fileFullPath, targetFile.fileFullPath, skipFiles, mode);
     const duplicateResult = await DuplicateResult.create({
       biddingFileId,
       biddingFileName: biddingFile.fileName,
       targetFileId,
       targetFileName: targetFile.fileName,
       skipFileIds,
-      mode,
-      result: compireRes,
-      abstract: extractAbstract(compireRes),
+      mode
+    });
+    let result
+
+    if (mode === 'ocr') {
+      const scanData = require('../transfrom/input_scan.json') // todo 替换成算法返回结果
+      result = await transfromScan(scanData, duplicateResult)
+    }
+
+    if (mode === 'digital') {
+      const digitalData = require('../transfrom/input_digital.json') // todo 替换成算法返回结果
+      result = await transfromDigital(digitalData, duplicateResult)
+    }
+
+    const duplicateResultDetail = await DuplicateResultDetail.create({
+      detail: result,
+      duplicateResultId: duplicateResult._id,
     });
 
-    setTimeout(() => {
-      res.json({ code: 0, message: "执行成功", data: duplicateResult });
-    }, 1000);
+    const abstract = extractAbstract(result)
+
+    await duplicateResult.updateOne({ detail: duplicateResultDetail._id, abstract });
+    duplicateResult.abstract = abstract
+
+    res.json({ code: 0, message: "执行成功", data: duplicateResult });
 
   } catch (error) {
     console.log(error);
@@ -64,7 +78,8 @@ router.get("/duplicate-result/:id", async (req, res) => {
     if (!duplicateResult) {
       return res.status(404).json({ code: 1, message: "未找到该比对" });
     }
-    res.json({ code: 0, message: "获取成功", data: duplicateResult });
+    const detail = await DuplicateResultDetail.findById(duplicateResult.detail);
+    res.json({ code: 0, message: "获取成功", data: duplicateResult, detail: detail.detail });
   } catch (error) {
     console.log(error);
     res.status(500).json({ code: 1, message: "服务器错误", error });

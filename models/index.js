@@ -15,33 +15,38 @@ const duplicateResultSchema = new mongoose.Schema({
   targetFileName: String,
   skipFileIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'File' }],
   mode: String,
-  result: Object,
+  detail: { type: mongoose.Schema.Types.ObjectId, ref: 'DuplicateResultDetail' },
   abstract: Object
+});
+
+const duplicateResultDetailSchema = new mongoose.Schema({
+  detail: Object,
+  duplicateResultId: { type: mongoose.Schema.Types.ObjectId, ref: 'DuplicateResult' },
 });
 
 const reportSchema = new mongoose.Schema({
   results: [{ type: mongoose.Schema.Types.ObjectId, ref: 'DuplicateResult' }],
   reportTime: Date,
-  /*
-    metaInfo: {
-      projectName: String,
-      biddingID: String,
-      biddingCompany: String,
-      biddingAgent: String,
-      participateCompany: String,
-      time: string,
-    }
-  */
+  // metaInfo: {
+  //   projectName: String,
+  //   biddingID: String,
+  //   biddingCompany: String,
+  //   biddingAgent: String,
+  //   participateCompany: String,
+  //   time: string,
+  // }
   metaInfo: Object,
 })
 
 // 创建模型
 const File = mongoose.model('File', fileSchema);
 const DuplicateResult = mongoose.model('DuplicateResult', duplicateResultSchema);
+const DuplicateResultDetail = mongoose.model('DuplicateResultDetail', duplicateResultDetailSchema);
 const Report = mongoose.model('Report', reportSchema);
 
 module.exports = {
   File,
   DuplicateResult,
-  Report
+  DuplicateResultDetail,
+  Report,
 };
