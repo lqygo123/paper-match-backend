@@ -33,14 +33,20 @@ const path = require('path')
 - image_match列表中的每个元素也是(x,a), (y,b)格式的，含义同上
 */
 const transfromDigital = (data) => { 
-  const coordPdf1 = data[0]
-  const coordPdf2 = data[1]
-  const textPdf1 = data[2]
-  const textPdf2 = data[3]
+
+  if (typeof data === 'string') { 
+    data = JSON.parse(data)
+  }
+
+  let offset = 2
+  const coordPdf1 = data[0 + offset]
+  const coordPdf2 = data[1 + offset]
+  const textPdf1 = data[2 + offset]
+  const textPdf2 = data[3 + offset]
   // const imagePdf1 = data[4]
-  const imagePdf2 = data[5]
-  const textMatch = data[6]
-  const imageMatch = data[7]
+  const imagePdf2 = data[5 + offset]
+  const textMatch = data[6 + offset]
+  const imageMatch = data[7 + offset]
 
   const textRepetitions = textMatch.map((matchItem, index) => {
     const [textPdf1Page, textPdf1BlockIdx] = matchItem[0]
@@ -121,11 +127,20 @@ const transfromDigital = (data) => {
 - pdf1是把第一个扫描件的每一页当成一个图片返回，pdf1[i]表示第i页对应的图片
 - pdf2同理
 */
-const  transfromScan = async (data, duplicateResult) => {
+const transfromScan = async (data, duplicateResult) => {
+  
+  // 如果 data 是 buffer ，转换成 string utf8
+
+  if (typeof data === 'string') { 
+    data = JSON.parse(data)
+  }
+
   const ocr1 = data[2]
   const ocr2 = data[3]
   const matchResult = data[4]
   const pdf1PageData = data[5]
+
+  console.log('transfromScan', data.length, pdf1PageData.length)
 
   const ocrRepetitions = matchResult.map((matchItem, index) => {
     const [ocr1Page, ocr1BlockIdx] = matchItem[0]

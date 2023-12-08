@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+const userSchema = new mongoose.Schema({
+  username: String,
+  password: String,
+  role: String,
+});
+
 // file schema
 const fileSchema = new mongoose.Schema({
   fileName: String,
@@ -13,7 +19,7 @@ const duplicateResultSchema = new mongoose.Schema({
   biddingFileName: String,
   targetFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
   targetFileName: String,
-  skipFileIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'File' }],
+  skipFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
   mode: String,
   detail: { type: mongoose.Schema.Types.ObjectId, ref: 'DuplicateResultDetail' },
   abstract: Object
@@ -39,12 +45,14 @@ const reportSchema = new mongoose.Schema({
 })
 
 // 创建模型
+const User = mongoose.model('User', userSchema);
 const File = mongoose.model('File', fileSchema);
 const DuplicateResult = mongoose.model('DuplicateResult', duplicateResultSchema);
 const DuplicateResultDetail = mongoose.model('DuplicateResultDetail', duplicateResultDetailSchema);
 const Report = mongoose.model('Report', reportSchema);
 
 module.exports = {
+  User,
   File,
   DuplicateResult,
   DuplicateResultDetail,

@@ -7,7 +7,7 @@ const { startScheduledTask } = require('./common/scheduled-task');
 const config = require('./config');
 const path = require('path');
 
-// const { jwtAuth } = require('./common/jwt-auth')
+const { jwtAuth } = require('./common/jwt-auth')
 
 const app = express();
 const port = config.PORT
@@ -28,12 +28,22 @@ mongoose.connection.on('disconnected', function() {
 });
 
 async function init() {
+  // create a default admin user
+  const { User } = require('./models');
+  const user = await User.findOne({ username: 'admin' });
+  if (!user) {
+    await User.create({
+      username: 'admin',
+      password: 'admin',
+      role: 'admin',
+    });
+  }
   startScheduledTask()
 }
 
 app.use(cors());
 app.use(morgan('dev'));
-// app.use(jwtAuth)
+app.use(jwtAuth)
 app.use('/static', express.static(path.join(__dirname, "./static")));
 app.use(express.json());
 app.use('/api/v1', routes);

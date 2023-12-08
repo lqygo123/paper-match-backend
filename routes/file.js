@@ -32,7 +32,9 @@ router.get("/:id", async (req, res) => {
     if (!file) {
       return res.status(404).json({ code: 1, message: "未找到该文件" });
     }
-    const { fileFullPath, fileName } = file;
+    const { fileName } = file;
+
+    const fileFullPath = path.join(__dirname, "../files", req.params.id);
     res.download(fileFullPath, fileName);
   } catch (error) {
     console.log(error);

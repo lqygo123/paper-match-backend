@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs-extra");
 const { File, DuplicateResult, DuplicateResultDetail, Report } = require("../models");
 const { transfromScan, transfromDigital } = require('../transfrom/transfrom')
+const runPythonScript = require('../compare/exec')
 
 const compireFile = async (biddingFilePath, targetFilePath, skipFiles, mode) => {
   // 先用 mock data
@@ -24,10 +25,10 @@ const extractAbstract = (result) => {
 
 router.post("/exec-duplicate", async (req, res) => {
   try {
-    const { biddingFileId, targetFileId, skipFileIds, mode = 'digital' } = req.body;
+    const { biddingFileId, targetFileId, skipFileId, mode = 'digital' } = req.body;
     const biddingFile = await File.findById(biddingFileId);
     const targetFile = await File.findById(targetFileId);
-    const skipFiles = (await File.find({ _id: { $in: skipFileIds } }) || []).map(file => file.fileFullPath);
+    const skipFile = await File.findById(skipFileId);
 
     if (!biddingFile || !targetFile) {
       return res.status(404).json({ code: 1, message: "未找到该文件" });
@@ -38,18 +39,55 @@ router.post("/exec-duplicate", async (req, res) => {
       biddingFileName: biddingFile.fileName,
       targetFileId,
       targetFileName: targetFile.fileName,
-      skipFileIds,
+      skipFileId,
       mode
     });
     let result
 
     if (mode === 'ocr') {
-      const scanData = require('../transfrom/input_scan.json') // todo 替换成算法返回结果
+      const pdf1AbsPath = path.join(__dirname, '../', 'files', biddingFileId)
+      const pdf2AbsPath = path.join(__dirname, '../', 'files', targetFileId)
+      const options = {
+        method: "compare_scan",
+        pdf1: pdf1AbsPath,
+        pdf2: pdf2AbsPath
+      }
+      if (skipFile) {
+        options.exclude = path.join(__dirname, '../', 'files', skipFileId)
+      }
+      console.log('runPythonScript', JSON.stringify(options))
+      const scanData = await runPythonScript(options);
+      console.log('runPythonScript res length', scanData.length)
+      if (!scanData) { 
+        return res.status(500).json({ code: 1, message: "算法执行失败" });
+      }
       result = await transfromScan(scanData, duplicateResult)
     }
 
     if (mode === 'digital') {
-      const digitalData = require('../transfrom/input_digital.json') // todo 替换成算法返回结果
+      // const digitalData = require('../transfrom/input_digital.json') // todo 替换成算法返回结果
+
+      const pdf1AbsPath = path.join(__dirname, '../', 'files', biddingFileId)
+      const pdf2AbsPath = path.join(__dirname, '../', 'files', targetFileId)
+      const options = {
+        method: "compare_digital",
+        pdf1: pdf1AbsPath,
+        pdf2: pdf2AbsPath,
+        text_thresh: '0.1',
+        filter_thresh: '5'
+      }
+      if (skipFile) {
+        options.exclude = path.join(__dirname, '../', 'files', skipFileId)
+      }
+      console.log('runPythonScript', JSON.stringify(options))
+      const digitalData = await runPythonScript(options);
+      console.log('runPythonScript res length', digitalData.length)
+
+      fs.writeFileSync(`digital-${duplicateResult._id}.json`, digitalData)
+      if (!digitalData) { 
+        return res.status(500).json({ code: 1, message: "算法执行失败" });
+      }
+
       result = await transfromDigital(digitalData, duplicateResult)
     }
 

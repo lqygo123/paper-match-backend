@@ -2,7 +2,9 @@ const jwt = require('jsonwebtoken');
 
 const secretKey = 'e9e1e9c8-5c30-11ee-8c99-0242ac120002';
 
-const bypassRoutes = [];
+const bypassRoutes = ['api/v1/user/login'];
+
+let activeTokens = {};
 
 const skipAuth = (req) => {
   let shouldSkip = false;
@@ -16,6 +18,12 @@ const skipAuth = (req) => {
 
 const generateToken = (payload) => {
   const token = jwt.sign(payload, secretKey, { expiresIn: '10y' });
+  // Remove any old tokens for the user
+  if (activeTokens[payload.userId]) {
+    delete activeTokens[payload.userId];
+  }
+  // Add the new token to the list of active tokens
+  activeTokens[payload.userId] = token;
   return token;
 }
 
@@ -28,11 +36,16 @@ const jwtAuth = async (req, res, next) => {
     return res.status(401).json({ code: 1, message: '请先登录' });
   }
   try {
-    req.jwtPayload = jwt.verify(authHeader, secretKey);
+    const payload = jwt.verify(authHeader, secretKey);
+    // Check if the token is in the list of active tokens
+    if (activeTokens[payload.userId] !== authHeader) {
+      throw new Error('登录已经失效，请重新登录');
+    }
+    req.jwtPayload = payload;
     next();
   } catch (err) {
     console.error(err);
-    res.status(401).json({ code: 1, message: '无效的 JWT token' });
+    res.status(401).json({ code: 1, message: err.message });
   }
 };
 
