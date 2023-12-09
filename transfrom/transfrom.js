@@ -79,7 +79,7 @@ const transfromDigital = (data) => {
 
     const pdf1coord = coordPdf1[imagePdf1Page][imagePdf1BlockIdx]
     const pdf2coord = coordPdf2[imagePdf2Page][imagePdf2BlockIdx]
-    const pdf2image = imagePdf2[imagePdf2Page][imagePdf2BlockIdx]
+    // const pdf2image = imagePdf2[imagePdf2Page][imagePdf2BlockIdx]
 
     return {
       id: `${imagePdf1Page}-${imagePdf1BlockIdx}-${imagePdf2Page}-${imagePdf2BlockIdx}`,
@@ -91,7 +91,7 @@ const transfromDigital = (data) => {
       pdf2coord,
       pdf2BlockIdx: imagePdf2BlockIdx,
       type: 'image',
-      image: pdf2image,
+      // image: pdf2image,
     }
   });
 

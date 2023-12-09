@@ -6,14 +6,14 @@ const { File, DuplicateResult, DuplicateResultDetail, Report } = require("../mod
 const { transfromScan, transfromDigital } = require('../transfrom/transfrom')
 const runPythonScript = require('../compare/exec')
 
-const compireFile = async (biddingFilePath, targetFilePath, skipFiles, mode) => {
-  // 先用 mock data
-  console.log('compireFile biddingFilePath', biddingFilePath)
-  console.log('compireFile targetFilePath', targetFilePath)
-  console.log('compireFile skipFiles', skipFiles)
-  console.log('compireFile mode', mode)
-  return {}
-}
+// const compireFile = async (biddingFilePath, targetFilePath, skipFiles, mode) => {
+//   // 先用 mock data
+//   console.log('compireFile biddingFilePath', biddingFilePath)
+//   console.log('compireFile targetFilePath', targetFilePath)
+//   console.log('compireFile skipFiles', skipFiles)
+//   console.log('compireFile mode', mode)
+//   return {}
+// }
 
 const extractAbstract = (result) => {
   delete result.textRepetitions

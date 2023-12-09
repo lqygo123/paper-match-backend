@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const secretKey = 'e9e1e9c8-5c30-11ee-8c99-0242ac120002';
 
-const bypassRoutes = ['api/v1/user/login'];
+const bypassRoutes = ['/api/v1/user/login', '/api/v1/file', '/static'];
 
 let activeTokens = {};
 
@@ -28,6 +28,8 @@ const generateToken = (payload) => {
 }
 
 const jwtAuth = async (req, res, next) => {
+
+  console.log('jwtAuth', req.path, req.method)
   if (skipAuth(req)) {
     return next();
   }
