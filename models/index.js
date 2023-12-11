@@ -4,6 +4,8 @@ const userSchema = new mongoose.Schema({
   username: String,
   password: String,
   role: String,
+  name: String,
+  enabled: Boolean,
 });
 
 // file schema

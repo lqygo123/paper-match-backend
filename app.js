@@ -36,7 +36,20 @@ async function init() {
       username: 'admin',
       password: 'zxczxc',
       role: 'admin',
+      enabled: true,
     });
+
+    // create 20 default user
+    const users = [];
+    for (let i = 1; i <= 20; i++) {
+      users.push({
+        username: `user${i}`,
+        password: `password`,
+        role: 'user',
+        enabled: true,
+      })
+    }
+    await User.insertMany(users);
   }
   startScheduledTask()
 }

@@ -4,7 +4,7 @@ const router = express.Router();
 const path = require("path");
 const upload = multer();
 const { File } = require("../models");
-const fs = require("fs");
+const fs = require("fs-extra");
 
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
@@ -15,6 +15,9 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     });
     const fileName = file._id.toString();
     const fileFullPath = path.join(__dirname, "../files", fileName);
+
+    await fs.ensureDir(path.join(__dirname, "../files"));
+
     fs.writeFileSync(fileFullPath, buffer);
     file.fileFullPath = fileFullPath;
     await file.save();

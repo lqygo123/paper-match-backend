@@ -28,7 +28,6 @@ const generateToken = (payload) => {
 }
 
 const jwtAuth = async (req, res, next) => {
-
   console.log('jwtAuth', req.path, req.method)
   if (skipAuth(req)) {
     return next();
@@ -51,7 +50,15 @@ const jwtAuth = async (req, res, next) => {
   }
 };
 
+const isAdmin = (req, res, next) => {
+  if (req.jwtPayload.role !== 'admin') {
+    return res.status(401).json({ code: 1, message: '没有权限' });
+  }
+  next();
+};
+
 module.exports = {
   generateToken,
   jwtAuth,
+  isAdmin
 };
