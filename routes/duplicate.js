@@ -6,14 +6,6 @@ const { File, DuplicateResult, DuplicateResultDetail, Report } = require("../mod
 const { transfromScan, transfromDigital } = require('../transfrom/transfrom')
 const runPythonScript = require('../compare/exec')
 
-// const compireFile = async (biddingFilePath, targetFilePath, skipFiles, mode) => {
-//   // 先用 mock data
-//   console.log('compireFile biddingFilePath', biddingFilePath)
-//   console.log('compireFile targetFilePath', targetFilePath)
-//   console.log('compireFile skipFiles', skipFiles)
-//   console.log('compireFile mode', mode)
-//   return {}
-// }
 
 const extractAbstract = (result) => {
   delete result.textRepetitions
@@ -73,8 +65,6 @@ router.post("/exec-duplicate", async (req, res) => {
         method: "compare_digital",
         pdf1: pdf1AbsPath,
         pdf2: pdf2AbsPath,
-        text_thresh: '0.1',
-        filter_thresh: '5'
       }
       if (skipFile) {
         options.exclude = path.join(__dirname, '../', 'files', skipFileId)
@@ -82,12 +72,10 @@ router.post("/exec-duplicate", async (req, res) => {
       console.log('runPythonScript', JSON.stringify(options))
       const digitalData = await runPythonScript(options);
       console.log('runPythonScript res length', digitalData.length)
-
-      fs.writeFileSync(`digital-${duplicateResult._id}.json`, digitalData)
+      // fs.writeFileSync(`digital-${duplicateResult._id}.json`, digitalData)
       if (!digitalData) { 
         return res.status(500).json({ code: 1, message: "算法执行失败" });
       }
-
       result = await transfromDigital(digitalData, duplicateResult)
     }
 

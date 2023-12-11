@@ -43,7 +43,7 @@ const transfromDigital = (data) => {
   const coordPdf2 = data[1 + offset]
   const textPdf1 = data[2 + offset]
   const textPdf2 = data[3 + offset]
-  // const imagePdf1 = data[4]
+  const imagePdf1 = data[4 + offset]
   const imagePdf2 = data[5 + offset]
   const textMatch = data[6 + offset]
   const imageMatch = data[7 + offset]
@@ -97,16 +97,22 @@ const transfromDigital = (data) => {
 
   // textTotal 计算 text_pdf1 中总共有多少个块
 
-  let pdf1TextTotal = 0
+  let textTotal = 0
   for (let i = 0; i < textPdf1.length; i++) {
     const page = textPdf1[i]
-    pdf1TextTotal += page.length
+    textTotal += page.length
   }
   
+  let imageTotal = 0
+  for (let i = 0; i < imagePdf1.length; i++) {
+    const page = imagePdf1[i]
+    imageTotal += page.length
+  }
 
   return {
-    repetitionRate: 0.5,
-    pdf1TextTotal,
+    repetitionRate:  data[1] / data[0],
+    textTotal,
+    imageTotal,
     textRepetitionCount: textRepetitions.length,
     imageRepetitionCount: imageRepetitions.length,
     textRepetitions,
@@ -189,11 +195,19 @@ const transfromScan = async (data, duplicateResult) => {
       src: `/static/ocr-pdf/${duplicateResult._id}/${index}.png`
     })
   })
-  
+
+  let textTotal = 0
+  for (let i = 0; i < ocr1.length; i++) {
+    const page = ocr1[i][0]
+    textTotal += page[0].length
+  }
 
   return {
-    repetitionRate: 0.5,
-    total: ocrRepetitions.length,
+    repetitionRate:  data[1] / data[0],
+    textTotal,
+    imageTotal: 0,
+    textRepetitionCount: ocrRepetitions.length,
+    imageRepetitionCount: 0,
     ocrRepetitions,
     pdf1Pages
   }

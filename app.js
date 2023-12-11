@@ -34,7 +34,7 @@ async function init() {
   if (!user) {
     await User.create({
       username: 'admin',
-      password: 'admin',
+      password: 'zxczxc',
       role: 'admin',
     });
   }
