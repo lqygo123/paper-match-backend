@@ -1,5 +1,6 @@
 const { spawn } = require("child_process");
 const path = require('path')
+// const fs = require('fs-extra')
 
 
 // method = "compare_digital" | "compare_scan"
@@ -41,6 +42,7 @@ function runPythonScript(options) {
           new Error(`Python script exited with code ${code}: ${errorString}`)
         );
       } else {
+        // fs.writeFileSync(`output-${Date.now()}.json`, dataString)
         resolve(dataString);
       }
     });

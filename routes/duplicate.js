@@ -79,14 +79,19 @@ router.post("/exec-duplicate", async (req, res) => {
       result = await transfromDigital(digitalData, duplicateResult)
     }
 
-    const duplicateResultDetail = await DuplicateResultDetail.create({
-      detail: result,
-      duplicateResultId: duplicateResult._id,
-    });
+    // 写入 result 到 $ duplicateResult._id
+    const resultPath = path.join(__dirname, '../', 'files', `result-${duplicateResult._id}.json`)
+    fs.ensureDirSync(path.join(__dirname, '../', 'files'))
+    fs.writeFileSync(resultPath, JSON.stringify(result))
 
-    const abstract = extractAbstract(result)
-
-    await duplicateResult.updateOne({ detail: duplicateResultDetail._id, abstract });
+    const abstract = {
+      ...result
+    }
+    delete abstract.textRepetitions
+    delete abstract.imageRepetitions
+    delete abstract.ocrRepetitions
+    delete abstract.pdf1Pages
+    await duplicateResult.updateOne({ abstract });
     duplicateResult.abstract = abstract
 
     res.json({ code: 0, message: "执行成功", data: duplicateResult });
@@ -104,8 +109,12 @@ router.get("/duplicate-result/:id", async (req, res) => {
     if (!duplicateResult) {
       return res.status(404).json({ code: 1, message: "未找到该比对" });
     }
-    const detail = await DuplicateResultDetail.findById(duplicateResult.detail);
-    res.json({ code: 0, message: "获取成功", data: duplicateResult, detail: detail.detail });
+    // const detail = await DuplicateResultDetail.findById(duplicateResult.detail);
+
+    const filePath = path.join(__dirname, '../', 'files', `result-${duplicateResult._id}.json`)
+    const detail = fs.readFileSync(filePath, 'utf-8')
+
+    res.json({ code: 0, message: "获取成功", data: duplicateResult, detail: JSON.parse(detail) });
   } catch (error) {
     console.log(error);
     res.status(500).json({ code: 1, message: "服务器错误", error });
