@@ -15,6 +15,13 @@ class TaskQueue {
     this.concurry = concurry || 2;
   }
 
+  updateRunning(taskId, key, value) { 
+    const taskItem = this.running.find(item => item.taskId === taskId)
+    if (taskItem) {
+      taskItem[key] = value
+    }
+  }
+
   enqueue(taskItem) {
     this.queue.push(taskItem);
     this.run();
@@ -52,145 +59,137 @@ class TaskQueue {
       const taskItem = this.queue.shift();
       this.running.push(taskItem);
       taskItem.isRunning = true;
-      taskItem.task().then(() => {
-        this.complete(taskItem, true);
-      }).catch(() => {
-        this.complete(taskItem, false);
+      taskItem.task().then((res) => {
+        this.complete(taskItem, true, res);
+      }).catch((err) => {
+        this.complete(taskItem, false, err);
       });
     }
   }
 
-  complete(taskItem, isSuccess) {
+  complete(taskItem, isSuccess, res) {
     const index = this.running.indexOf(taskItem);
     if (index > -1) {
       this.running.splice(index, 1);
     }
     taskItem.isRunning = false;
     if (isSuccess) {
-      taskItem.onSuccess();
+      taskItem.onSuccess(res);
     } else {
-      taskItem.onFail();
+      taskItem.onFail(res);
     }
     this.run();
   }
 }
 
+const taskQueue = new TaskQueue(2);
+
 const createTaskItem = (name, delay) => ({
   name,
   isRunning: false,
-  task: () => new Promise(resolve => setTimeout(resolve, delay)),
+  task: () => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        console.log(`${name} completed`);
+        resolve(name);
+      }, delay);
+    })
+  },
   onSuccess: () => console.log(`${name} completed`),
   onFail: () => console.log(`${name} failed`),
 });
 
-const createBatchTask = (tasks) => {
-  return new Promise((resolve, reject) => {
-    let completedTasks = 0;
-    const results = [];
 
-    tasks.forEach((task, index) => {
-      this.enqueue({
-        ...task,
-        onSuccess: (result) => {
-          results[index] = { status: 'success', result };
-          completedTasks++;
-          if (completedTasks === tasks.length) {
-            resolve(results);
-          }
-        },
-        onFail: (error) => {
-          results[index] = { status: 'failed', error };
-          completedTasks++;
-          if (completedTasks === tasks.length) {
-            resolve(results);
-          }
-        },
-      });
-    });
+const execDuplicate = async (payload, taskId) => { 
+
+  const { biddingFileId, targetFileId, skipFileId, biddingFileName, targetFileName, mode = 'digital' } = payload;
+
+  console.log('execDuplicate', taskId, biddingFileName, '对比', targetFileName, mode)
+
+  const biddingFile = await File.findById(biddingFileId);
+  const targetFile = await File.findById(targetFileId);
+  const skipFile = await File.findById(skipFileId);
+
+  if (!biddingFile || !targetFile) {
+    throw new Error('未找到文件')
+  }
+
+  const duplicateResult = await DuplicateResult.create({
+    biddingFileId,
+    biddingFileName: biddingFile.fileName,
+    targetFileId,
+    targetFileName: targetFile.fileName,
+    skipFileId,
+    mode
   });
+  let result
+
+  if (mode === 'ocr') {
+    const pdf1AbsPath = path.join(__dirname, '../', 'files', biddingFileId)
+    const pdf2AbsPath = path.join(__dirname, '../', 'files', targetFileId)
+    const options = {
+      method: "compare_scan",
+      pdf1: pdf1AbsPath,
+      pdf2: pdf2AbsPath
+    }
+    if (skipFile) {
+      options.exclude = path.join(__dirname, '../', 'files', skipFileId)
+    }
+    console.log('runPythonScript', JSON.stringify(options))
+    const scanData = await runPythonScript(options);
+    console.log('runPythonScript res length', scanData.length)
+    if (!scanData) { 
+      throw new Error('算法执行失败')
+    }
+    result = await transfromScan(scanData, duplicateResult)
+  }
+
+  if (mode === 'digital') {
+    // const digitalData = require('../transfrom/input_digital.json') // todo 替换成算法返回结果
+
+    const pdf1AbsPath = path.join(__dirname, '../', 'files', biddingFileId)
+    const pdf2AbsPath = path.join(__dirname, '../', 'files', targetFileId)
+    const options = {
+      method: "compare_digital",
+      pdf1: pdf1AbsPath,
+      pdf2: pdf2AbsPath,
+    }
+    if (skipFile) {
+      options.exclude = path.join(__dirname, '../', 'files', skipFileId)
+    }
+    console.log('runPythonScript', JSON.stringify(options))
+    const digitalData = await runPythonScript(options);
+    console.log('runPythonScript res length', digitalData.length)
+    // fs.writeFileSync(`digital-${duplicateResult._id}.json`, digitalData)
+    if (!digitalData) { 
+      throw new Error('算法执行失败')
+    }
+    result = await transfromDigital(digitalData, duplicateResult)
+  }
+
+  // 写入 result 到 $ duplicateResult._id
+  const resultPath = path.join(__dirname, '../', 'files', `result-${duplicateResult._id}.json`)
+  fs.ensureDirSync(path.join(__dirname, '../', 'files'))
+  fs.writeFileSync(resultPath, JSON.stringify(result))
+
+  const abstract = {
+    ...result
+  }
+  delete abstract.textRepetitions
+  delete abstract.imageRepetitions
+  delete abstract.ocrRepetitions
+  delete abstract.pdf1Pages
+  await duplicateResult.updateOne({ abstract });
+  duplicateResult.abstract = abstract
+
+  return duplicateResult
 }
 
 router.post("/exec-duplicate", async (req, res) => {
   try {
-    const { biddingFileId, targetFileId, skipFileId, mode = 'digital' } = req.body;
-    const biddingFile = await File.findById(biddingFileId);
-    const targetFile = await File.findById(targetFileId);
-    const skipFile = await File.findById(skipFileId);
-
-    if (!biddingFile || !targetFile) {
-      return res.status(404).json({ code: 1, message: "未找到该文件" });
-    }
-
-    const duplicateResult = await DuplicateResult.create({
-      biddingFileId,
-      biddingFileName: biddingFile.fileName,
-      targetFileId,
-      targetFileName: targetFile.fileName,
-      skipFileId,
-      mode
-    });
-    let result
-
-    if (mode === 'ocr') {
-      const pdf1AbsPath = path.join(__dirname, '../', 'files', biddingFileId)
-      const pdf2AbsPath = path.join(__dirname, '../', 'files', targetFileId)
-      const options = {
-        method: "compare_scan",
-        pdf1: pdf1AbsPath,
-        pdf2: pdf2AbsPath
-      }
-      if (skipFile) {
-        options.exclude = path.join(__dirname, '../', 'files', skipFileId)
-      }
-      console.log('runPythonScript', JSON.stringify(options))
-      const scanData = await runPythonScript(options);
-      console.log('runPythonScript res length', scanData.length)
-      if (!scanData) { 
-        return res.status(500).json({ code: 1, message: "算法执行失败" });
-      }
-      result = await transfromScan(scanData, duplicateResult)
-    }
-
-    if (mode === 'digital') {
-      // const digitalData = require('../transfrom/input_digital.json') // todo 替换成算法返回结果
-
-      const pdf1AbsPath = path.join(__dirname, '../', 'files', biddingFileId)
-      const pdf2AbsPath = path.join(__dirname, '../', 'files', targetFileId)
-      const options = {
-        method: "compare_digital",
-        pdf1: pdf1AbsPath,
-        pdf2: pdf2AbsPath,
-      }
-      if (skipFile) {
-        options.exclude = path.join(__dirname, '../', 'files', skipFileId)
-      }
-      console.log('runPythonScript', JSON.stringify(options))
-      const digitalData = await runPythonScript(options);
-      console.log('runPythonScript res length', digitalData.length)
-      // fs.writeFileSync(`digital-${duplicateResult._id}.json`, digitalData)
-      if (!digitalData) { 
-        return res.status(500).json({ code: 1, message: "算法执行失败" });
-      }
-      result = await transfromDigital(digitalData, duplicateResult)
-    }
-
-    // 写入 result 到 $ duplicateResult._id
-    const resultPath = path.join(__dirname, '../', 'files', `result-${duplicateResult._id}.json`)
-    fs.ensureDirSync(path.join(__dirname, '../', 'files'))
-    fs.writeFileSync(resultPath, JSON.stringify(result))
-
-    const abstract = {
-      ...result
-    }
-    delete abstract.textRepetitions
-    delete abstract.imageRepetitions
-    delete abstract.ocrRepetitions
-    delete abstract.pdf1Pages
-    await duplicateResult.updateOne({ abstract });
-    duplicateResult.abstract = abstract
-
+    // const { biddingFileId, targetFileId, skipFileId, mode = 'digital' } = req.body;
+    const duplicateResult = await execDuplicate(req.body)
     res.json({ code: 0, message: "执行成功", data: duplicateResult });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ code: 1, message: "服务器错误", error });
@@ -198,7 +197,76 @@ router.post("/exec-duplicate", async (req, res) => {
 });
 
 router.post("/create-duplicate-task", async (req, res) => {
-  const { metaInfo, taskList } = req.body;
+  const { taskList } = req.body;
+
+  const bachTaskPromise = taskQueue.createBatchTask(taskList.map((task) => {
+    const taskId = Date.now() + Math.random().toString(36).substr(2);
+    const name = `${task.biddingFileName} 比对 ${task.targetFileName}`
+    return {
+      taskId,
+      name,
+      createAt: Date.now(),
+      ...task,
+      task: async () => { 
+        let timespassed = 0
+        const interval = setInterval(() => {
+          timespassed += 1
+          taskQueue.updateRunning(taskId, 'timespassed', timespassed)
+        }, 1000)
+        try {
+          const res = await execDuplicate(task, taskId)
+          console.log('task completed', name, res)
+          clearInterval(interval)
+          return res._id
+        } catch (error) {
+          console.log('task fail', name)
+          clearInterval(interval)
+          console.log('task err', error)
+          throw error
+        }
+      } 
+    }
+  }))
+  res.json({ code: 0, message: "创建队列" });
+  const results = await bachTaskPromise
+  console.log('create-duplicate-task down', results)
+
+  // todo createreport 
+  
+
+  // taskList.forEach((task) => {
+  //   const taskId = Date.now() + Math.random().toString(36).substr(2);
+  //   taskQueue.enqueue({
+  //     taskId,
+  //     name: `${task.biddingFileName} 比对 ${task.targetFileName}`,
+  //     createAt: Date.now(),
+  //     ...task,
+  //     task: async () => { 
+  //       let timespassed = 0
+  //       const interval = setInterval(() => {
+  //         timespassed += 1
+  //         taskQueue.updateRunning(taskId, 'timespassed', timespassed)
+  //       }, 1000)
+  //       try {
+  //         await execDuplicate(task, taskId)
+  //         clearInterval(interval)
+  //       } catch (error) {
+  //         clearInterval(interval)
+  //         console.log('task err', error)
+  //       }
+  //     } 
+  //   });
+  // })
+
+})
+
+router.get("/current-tasks", async (req, res) => { 
+  res.json({
+    code: 0, message: "执行成功", data: {
+      running: taskQueue.running,
+      queue: taskQueue.queue
+    }
+  });
 })
 
 module.exports = router;
