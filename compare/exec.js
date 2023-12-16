@@ -13,9 +13,9 @@ function runPythonScript(options) {
   args.push(pdf1);
   args.push(pdf2);
   if (exclude) args.push("--exclude", exclude);
-  args.push("--text_thresh", text_thresh || "0.4");
-  args.push("--filter_thresh", filter_thresh || '20');
-  if (image_thresh) args.push("--image_thresh", image_thresh)
+  // args.push("--text_thresh", text_thresh || "0.1");
+  // args.push("--filter_thresh", filter_thresh || '6');
+  // if (image_thresh) args.push("--image_thresh", image_thresh)
 
   return new Promise((resolve, reject) => {
 

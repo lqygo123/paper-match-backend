@@ -70,6 +70,7 @@ node_modules/
 npm-debug.log*
 yarn-error.log*
 **/ocr-pdf
+**/digital-images
 
 # static
 files/

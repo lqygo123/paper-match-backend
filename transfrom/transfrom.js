@@ -32,7 +32,7 @@ const path = require('path')
 - text_match列表中的每个元素都是 (x,a), (y,b)格式的，表示PDF1的第x页的第a个box和PDF2的y页的第b个box匹配到一起
 - image_match列表中的每个元素也是(x,a), (y,b)格式的，含义同上
 */
-const transfromDigital = (data) => { 
+const transfromDigital = (data, duplicateResult) => { 
 
   if (typeof data === 'string') { 
     data = JSON.parse(data)
@@ -58,7 +58,7 @@ const transfromDigital = (data) => {
     const pdf1text = textPdf1[textPdf1Page][textPdf1BlockIdx]
 
     return {
-      id: `${textPdf1Page}-${textPdf1BlockIdx}-${textPdf2Page}-${textPdf2BlockIdx}`,
+      id: `text-${textPdf1Page}-${textPdf1BlockIdx}-${textPdf2Page}-${textPdf2BlockIdx}`,
       index,
       pdf1CoordStr: `${textPdf1Page}-${textPdf1BlockIdx}-${pdf1coord.join(',')}`,
       pdf1Page: textPdf1Page,
@@ -71,7 +71,10 @@ const transfromDigital = (data) => {
       pdf1text,
     }
   })
-    // .filter(item => item.text.length > 20 && item.pdf1text.length > 20);
+  // .filter(item => item.text.length > 20 && item.pdf1text.length > 20);
+  
+  const staticDir = path.join(__dirname, `../static/digital-images/${duplicateResult._id}`)
+  fs.ensureDirSync(staticDir)
 
   const imageRepetitions = imageMatch.map((matchItem, index) => {
     const [imagePdf1Page, imagePdf1BlockIdx] = matchItem[0]
@@ -79,10 +82,13 @@ const transfromDigital = (data) => {
 
     const pdf1coord = coordPdf1[imagePdf1Page][imagePdf1BlockIdx]
     const pdf2coord = coordPdf2[imagePdf2Page][imagePdf2BlockIdx]
-    // const pdf2image = imagePdf2[imagePdf2Page][imagePdf2BlockIdx]
+    const pdf2image = imagePdf2[imagePdf2Page][imagePdf2BlockIdx]
+
+    // pdf2image 为 base64 数据， 对其中每一项， 写入文件到 digital-images 文件夹中，命名为 `${id}.png`
+    fs.writeFileSync(path.join(staticDir, `${index}.png`), pdf2image, 'base64')
 
     return {
-      id: `${imagePdf1Page}-${imagePdf1BlockIdx}-${imagePdf2Page}-${imagePdf2BlockIdx}`,
+      id: `image-${imagePdf1Page}-${imagePdf1BlockIdx}-${imagePdf2Page}-${imagePdf2BlockIdx}`,
       index,
       pdf1Page: imagePdf1Page,
       pdf1coord,
@@ -91,7 +97,7 @@ const transfromDigital = (data) => {
       pdf2coord,
       pdf2BlockIdx: imagePdf2BlockIdx,
       type: 'image',
-      // image: pdf2image,
+      imgSrc: `/static/digital-images/${duplicateResult._id}/${index}.png`,
     }
   });
 
@@ -154,7 +160,7 @@ const transfromScan = async (data, duplicateResult) => {
     const pdf1coord = ocr1[ocr1Page][0][ocr1BlockIdx]
     const pdf2Content = ocr2[ocr2Page][1][ocr2BlockIdx]
     return {
-      id: `${ocr1Page}-${ocr1BlockIdx}-${ocr2Page}-${ocr2BlockIdx}`,
+      id: `text-${ocr1Page}-${ocr1BlockIdx}-${ocr2Page}-${ocr2BlockIdx}`,
       index,
       pdf1Page: ocr1Page,
       pdf1coord,

@@ -122,7 +122,7 @@ const execDuplicate = async (payload, taskId) => {
     }
     console.log('runPythonScript', JSON.stringify(options))
     const scanData = await runPythonScript(options);
-    console.log('runPythonScript res length', scanData.length)
+    fs.writeFileSync(path.join(__dirname, '../', 'files', `output-ocr-${duplicateResult._id}.json`), scanData)
     if (!scanData) { 
       throw new Error('算法执行失败')
     }
@@ -145,7 +145,7 @@ const execDuplicate = async (payload, taskId) => {
     console.log('runPythonScript', JSON.stringify(options))
     const digitalData = await runPythonScript(options);
     console.log('runPythonScript res length', digitalData.length)
-    // fs.writeFileSync(`digital-${duplicateResult._id}.json`, digitalData)
+    fs.writeFileSync(path.join(__dirname, '../', 'files', `output-digital-${duplicateResult._id}.json`), digitalData)
     if (!digitalData) { 
       throw new Error('算法执行失败')
     }
@@ -219,7 +219,7 @@ router.post("/create-duplicate-task", async (req, res) => {
 
   // todo createreport 
   const report = await Report.create({
-    results: results.map(item => item.result._id).filter(_id => _id),
+    results: results.map(item => item && item.result && item.result._id).filter(_id => _id),
     metaInfo: reportMetaInfo,
     reportTime: new Date(),
   });
