@@ -73,31 +73,28 @@ router.get("/reports", async (req, res) => {
     const { startTime, endTime } = req.query;
     const query = {};
     if (startTime && !endTime) {
-      query.reportTime = { $gte: startTime };
+      query["metaInfo.time"] = { $gte: startTime };
     }
     if (!startTime && endTime) {
-      query.reportTime = { $lte: endTime };
+      query["metaInfo.time"] = { $lte: endTime };
     }
     if (startTime && endTime) {
-      query.reportTime = { $gte: startTime, $lte: endTime };
+      query["metaInfo.time"] = { $gte: startTime, $lte: endTime };
     }
 
-    const { projectName, biddingID, biddingCompany, biddingAgent, participateCompany } = req.query;
+    const { projectName, biddingNumber, biddingCompany, participatingCompany } = req.query;
   
     if (projectName) {
       query["metaInfo.projectName"] = { $regex: projectName };
     }
-    if (biddingID) {
-      query["metaInfo.biddingID"] = { $regex: biddingID };
+    if (biddingNumber) {
+      query["metaInfo.biddingNumber"] = { $regex: biddingNumber };
     }
     if (biddingCompany) {
       query["metaInfo.biddingCompany"] = { $regex: biddingCompany };
     }
-    if (biddingAgent) {
-      query["metaInfo.biddingAgent"] = { $regex: biddingAgent };
-    }
-    if (participateCompany) {
-      query["metaInfo.participateCompany"] = { $regex: participateCompany };
+    if (participatingCompany) {
+      query["metaInfo.participatingCompany"] = { $regex: participatingCompany };
     }
     const reports = (await Report.find(query) || []);
     res.json({ code: 0, message: "获取成功", data: reports });
