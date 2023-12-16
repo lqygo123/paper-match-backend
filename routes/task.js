@@ -197,7 +197,7 @@ router.post("/exec-duplicate", async (req, res) => {
 });
 
 router.post("/create-duplicate-task", async (req, res) => {
-  const { taskList } = req.body;
+  const { taskList, reportMetaInfo } = req.body;
 
   const bachTaskPromise = taskQueue.createBatchTask(taskList.map((task) => {
     const taskId = Date.now() + Math.random().toString(36).substr(2);
@@ -205,6 +205,7 @@ router.post("/create-duplicate-task", async (req, res) => {
     return {
       taskId,
       name,
+      reportMetaInfo,
       createAt: Date.now(),
       ...task,
       task: async () => { 
@@ -229,35 +230,16 @@ router.post("/create-duplicate-task", async (req, res) => {
   }))
   res.json({ code: 0, message: "创建队列" });
   const results = await bachTaskPromise
-  console.log('create-duplicate-task down', results)
+  console.log('create-duplicate-task down', results, reportMetaInfo)
 
   // todo createreport 
-  
+  const report = await Report.create({
+    results: results.map(item => item.result._id).filter(_id => _id),
+    metaInfo: reportMetaInfo,
+    reportTime: new Date(),
+  });
 
-  // taskList.forEach((task) => {
-  //   const taskId = Date.now() + Math.random().toString(36).substr(2);
-  //   taskQueue.enqueue({
-  //     taskId,
-  //     name: `${task.biddingFileName} 比对 ${task.targetFileName}`,
-  //     createAt: Date.now(),
-  //     ...task,
-  //     task: async () => { 
-  //       let timespassed = 0
-  //       const interval = setInterval(() => {
-  //         timespassed += 1
-  //         taskQueue.updateRunning(taskId, 'timespassed', timespassed)
-  //       }, 1000)
-  //       try {
-  //         await execDuplicate(task, taskId)
-  //         clearInterval(interval)
-  //       } catch (error) {
-  //         clearInterval(interval)
-  //         console.log('task err', error)
-  //       }
-  //     } 
-  //   });
-  // })
-
+  console.log('create-duplicate-task report 创建成功', report._id)
 })
 
 router.get("/current-tasks", async (req, res) => { 
