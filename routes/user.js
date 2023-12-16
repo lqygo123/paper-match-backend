@@ -14,8 +14,8 @@ router.post("/login", async (req, res) => {
     if (!user.enabled) {
       return res.status(403).json({ code: 1, message: "该用户未授权，请联系管理员开通权限" });
     }
-    const token = generateToken({ userId: user._id, role: user.role });
-    res.json({ code: 0, message: "登录成功", data: { token, role: user.role, username: user.username } });
+    const token = generateToken({ userId: user._id, role: user.role, name: user.name });
+    res.json({ code: 0, message: "登录成功", data: { token, role: user.role, username: user.username, name: user.name } });
   } catch (error) {
     console.log(error);
     res.status(500).json({ code: 1, message: "服务器错误", error });

@@ -184,30 +184,30 @@ router.post("/exec-duplicate", async (req, res) => {
 router.post("/create-duplicate-task", async (req, res) => {
   const { taskList, reportMetaInfo } = req.body;
 
-  const bachTaskPromise = taskQueue.createBatchTask(taskList.map((task) => {
+  const creator = {
+    name: req.jwtPayload.name,
+    role: req.jwtPayload.role,
+  }
+
+  const batchId = 'batch-' + Date.now() + Math.random().toString(36).substr(2);
+
+  const bachTaskPromise = taskQueue.createBatchTask(taskList.map((task, index) => {
     const taskId = Date.now() + Math.random().toString(36).substr(2);
-    const name = `${task.biddingFileName} 比对 ${task.targetFileName}`
     return {
       taskId,
-      name,
+      batchId,
       reportMetaInfo,
+      batchTotal: taskList.length,
+      batchIndex: index,
+      creator,
       createAt: Date.now(),
-      ...task,
       task: async () => { 
-        let timespassed = 0
-        const interval = setInterval(() => {
-          timespassed += 1
-          taskQueue.updateRunning(taskId, 'timespassed', timespassed)
-        }, 1000)
         try {
           const res = await execDuplicate(task, taskId)
-          console.log('task completed', name, res)
-          clearInterval(interval)
+          console.log('task completed', res)
           return res._id
         } catch (error) {
-          console.log('task fail', name)
-          clearInterval(interval)
-          console.log('task err', error)
+          console.error('task err', error)
           throw error
         }
       } 

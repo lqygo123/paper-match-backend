@@ -28,7 +28,6 @@ const generateToken = (payload) => {
 }
 
 const jwtAuth = async (req, res, next) => {
-  console.log('jwtAuth', req.path, req.method)
   if (skipAuth(req)) {
     return next();
   }
