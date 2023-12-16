@@ -5,6 +5,7 @@ const { File, DuplicateResult, Report } = require("../models");
 const runPythonScript = require('../compare/exec')
 const { transfromScan, transfromDigital } = require('../transfrom/transfrom')
 const path = require("path");
+const { TASK_CONCURRENCY } = require('../config')
 
 class TaskQueue {
   concurry = 2; // 并发数
@@ -12,7 +13,7 @@ class TaskQueue {
   running = []; // 正在运行的任务
 
   constructor(concurry) {
-    this.concurry = concurry || 2;
+    this.concurry = concurry || 1;
   }
 
   updateRunning(taskId, key, value) { 
@@ -82,23 +83,7 @@ class TaskQueue {
   }
 }
 
-const taskQueue = new TaskQueue(2);
-
-const createTaskItem = (name, delay) => ({
-  name,
-  isRunning: false,
-  task: () => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        console.log(`${name} completed`);
-        resolve(name);
-      }, delay);
-    })
-  },
-  onSuccess: () => console.log(`${name} completed`),
-  onFail: () => console.log(`${name} failed`),
-});
-
+const taskQueue = new TaskQueue(TASK_CONCURRENCY);
 
 const execDuplicate = async (payload, taskId) => { 
 
