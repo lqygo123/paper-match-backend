@@ -2,18 +2,10 @@ const express = require("express");
 const router = express.Router();
 const path = require("path");
 const fs = require("fs-extra");
-const { File, DuplicateResult, DuplicateResultDetail, Report } = require("../models");
+const { File, DuplicateResult, Report } = require("../models");
 const { transfromScan, transfromDigital } = require('../transfrom/transfrom')
 const runPythonScript = require('../compare/exec')
 
-
-const extractAbstract = (result) => {
-  delete result.textRepetitions
-  delete result.imageRepetitions
-  delete result.ocrRepetitions
-  delete result.pdf1Pages
-  return result
-}
 
 router.post("/exec-duplicate", async (req, res) => {
   try {
