@@ -82,7 +82,7 @@ router.get("/reports", async (req, res) => {
       query.reportTime = { $gte: startTime, $lte: endTime };
     }
 
-    const { projectName, biddingID, biddingCompany, biddingAgent, participateCompany, time } = req.query;
+    const { projectName, biddingID, biddingCompany, biddingAgent, participateCompany } = req.query;
   
     if (projectName) {
       query["metaInfo.projectName"] = { $regex: projectName };

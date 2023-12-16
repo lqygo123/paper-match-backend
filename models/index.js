@@ -35,14 +35,6 @@ const duplicateResultDetailSchema = new mongoose.Schema({
 const reportSchema = new mongoose.Schema({
   results: [{ type: mongoose.Schema.Types.ObjectId, ref: 'DuplicateResult' }],
   reportTime: Date,
-  // metaInfo: {
-  //   projectName: String,
-  //   biddingID: String,
-  //   biddingCompany: String,
-  //   biddingAgent: String,
-  //   participateCompany: String,
-  //   time: string,
-  // }
   metaInfo: Object,
 })
 
