@@ -8,9 +8,7 @@ function runPythonScript(options) {
   const pyAbsPath = path.join(__dirname, method + '.py')
   const args = [pyAbsPath];
 
-  if (Math.random() > 0.5) { 
-    args.push(pdf1);
-  }
+  args.push(pdf1);
   args.push(pdf2);
   if (exclude) args.push("--exclude", exclude);
   return new Promise((resolve) => {
