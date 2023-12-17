@@ -121,12 +121,24 @@ const execDuplicate = async (payload, taskId) => {
       options.exclude = path.join(__dirname, '../', 'files', skipFileId)
     }
     console.log('runPythonScript', JSON.stringify(options))
-    const scanData = await runPythonScript(options);
-    fs.writeFileSync(path.join(__dirname, '../', 'files', `output-ocr-${duplicateResult._id}.json`), scanData)
-    if (!scanData) { 
+    const { dataString, errorString, spanPythonArgs } = await runPythonScript(options);
+    fs.writeFileSync(path.join(__dirname, '../', 'files', `output-ocr-${duplicateResult._id}.json`), dataString)
+    if (!dataString) { 
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      const hours = String(currentDate.getHours()).padStart(2, '0');
+      const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+      const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+      const formattedDate = `${year}_${month}_${day}_${hours}:${minutes}:${seconds}`;
+      const logPath = path.join(__dirname, '../', 'error-logs')
+      fs.ensureDirSync(logPath)
+      fs.writeFileSync(path.join(logPath, `error_log_${formattedDate}.log`), errorString)
+      console.error('算法执行失败 输出 stdout 为空，算法运行参数：',spanPythonArgs, '错误日志:', path.join(logPath, `error_log_${formattedDate}.log`))
       throw new Error('算法执行失败')
     }
-    result = await transfromScan(scanData, duplicateResult)
+    result = await transfromScan(dataString, duplicateResult)
   }
 
   if (mode === 'digital') {
@@ -143,13 +155,25 @@ const execDuplicate = async (payload, taskId) => {
       options.exclude = path.join(__dirname, '../', 'files', skipFileId)
     }
     console.log('runPythonScript', JSON.stringify(options))
-    const digitalData = await runPythonScript(options);
-    console.log('runPythonScript res length', digitalData.length)
-    fs.writeFileSync(path.join(__dirname, '../', 'files', `output-digital-${duplicateResult._id}.json`), digitalData)
-    if (!digitalData) { 
+    const { dataString, errorString, spanPythonArgs } = await runPythonScript(options);
+    // console.log('runPythonScript res length', digitalData.length)
+    fs.writeFileSync(path.join(__dirname, '../', 'files', `output-digital-${duplicateResult._id}.json`), dataString)
+    if (!dataString) { 
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      const hours = String(currentDate.getHours()).padStart(2, '0');
+      const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+      const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+      const formattedDate = `${year}_${month}_${day}_${hours}.${minutes}.${seconds}`;
+      const logPath = path.join(__dirname, '../', 'error-logs')
+      fs.ensureDirSync(logPath)
+      fs.writeFileSync(path.join(logPath, `error_log_${formattedDate}.log`), errorString)
+      console.error('算法执行失败 输出 stdout 为空，算法运行参数：',spanPythonArgs, '错误日志:', path.join(logPath, `error_log_${formattedDate}.log`))
       throw new Error('算法执行失败')
     }
-    result = await transfromDigital(digitalData, duplicateResult)
+    result = await transfromDigital(dataString, duplicateResult)
   }
 
   // 写入 result 到 $ duplicateResult._id
@@ -205,7 +229,7 @@ router.post("/create-duplicate-task", async (req, res) => {
         try {
           const res = await execDuplicate(task, taskId)
           console.log('task completed', res)
-          return res._id
+          return res && res._id
         } catch (error) {
           console.error('task err', error)
           throw error

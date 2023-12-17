@@ -71,6 +71,7 @@ npm-debug.log*
 yarn-error.log*
 **/ocr-pdf
 **/digital-images
+**/error-logs
 
 # static
 files/
