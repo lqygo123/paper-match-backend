@@ -15,7 +15,22 @@ router.get("/duplicate-result/:id", async (req, res) => {
     // const detail = await DuplicateResultDetail.findById(duplicateResult.detail);
 
     const filePath = path.join(__dirname, '../', 'files', `result-${duplicateResult._id}.json`)
-    const detail = fs.readFileSync(filePath, 'utf-8')
+    // const detail = fs.readFileSync(filePath, 'utf-8')
+
+    // 使用 流读取文件
+    const detail = await new Promise((resolve, reject) => {
+      const readStream = fs.createReadStream(filePath, { encoding: 'utf-8' })
+      let data = ''
+      readStream.on('data', (chunk) => {
+        data += chunk
+      })
+      readStream.on('end', () => {
+        resolve(data.toString('utf-8'))
+      })
+      readStream.on('error', (err) => {
+        reject(err)
+      })
+    })
 
     res.json({ code: 0, message: "获取成功", data: duplicateResult, detail: JSON.parse(detail) });
   } catch (error) {
