@@ -111,7 +111,9 @@ router.get("/reports", async (req, res) => {
     if (participatingCompany) {
       query["metaInfo.participatingCompany"] = { $regex: participatingCompany };
     }
-    const reports = (await Report.find(query) || []);
+
+    // const reports = (await Report.find(query) || []);
+    const reports = (await Report.find(query).sort({ reportTime: -1 }) || []);
     res.json({ code: 0, message: "获取成功", data: reports });
   } catch (error) {
     console.log(error);

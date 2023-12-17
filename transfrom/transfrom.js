@@ -33,20 +33,18 @@ const path = require('path')
 - image_match列表中的每个元素也是(x,a), (y,b)格式的，含义同上
 */
 const transfromDigital = (data, duplicateResult) => { 
-
   if (typeof data === 'string') { 
     data = JSON.parse(data)
   }
-
-  let offset = 2
-  const coordPdf1 = data[0 + offset]
-  const coordPdf2 = data[1 + offset]
-  const textPdf1 = data[2 + offset]
-  const textPdf2 = data[3 + offset]
-  const imagePdf1 = data[4 + offset]
-  const imagePdf2 = data[5 + offset]
-  const textMatch = data[6 + offset]
-  const imageMatch = data[7 + offset]
+  const coordPdf1 = data.pdf1_text_coord
+  const coordImagePdf1 = data.pdf1_image_coord
+  const coordImagePdf2 = data.pdf2_image_coord
+  const textPdf1 = data.pdf1_text
+  const textPdf2 = data.pdf2_text
+  const imagePdf1 = data.pdf1_image
+  const imagePdf2 = data.pdf2_image
+  const textMatch = data.text_match
+  const imageMatch = data.image_match
 
   const textRepetitions = textMatch.map((matchItem, index) => {
     const [textPdf1Page, textPdf1BlockIdx] = matchItem[0]
@@ -71,7 +69,6 @@ const transfromDigital = (data, duplicateResult) => {
       pdf1text,
     }
   })
-  // .filter(item => item.text.length > 20 && item.pdf1text.length > 20);
   
   const staticDir = path.join(__dirname, `../static/digital-images/${duplicateResult._id}`)
   fs.ensureDirSync(staticDir)
@@ -80,8 +77,8 @@ const transfromDigital = (data, duplicateResult) => {
     const [imagePdf1Page, imagePdf1BlockIdx] = matchItem[0]
     const [imagePdf2Page, imagePdf2BlockIdx] = matchItem[1]
 
-    const pdf1coord = coordPdf1[imagePdf1Page][imagePdf1BlockIdx]
-    const pdf2coord = coordPdf2[imagePdf2Page][imagePdf2BlockIdx]
+    const pdf1coord = coordImagePdf1[imagePdf1Page][imagePdf1BlockIdx]
+    const pdf2coord = coordImagePdf2[imagePdf2Page][imagePdf2BlockIdx]
     const pdf2image = imagePdf2[imagePdf2Page][imagePdf2BlockIdx]
 
     // pdf2image 为 base64 数据， 对其中每一项， 写入文件到 digital-images 文件夹中，命名为 `${id}.png`
@@ -116,7 +113,9 @@ const transfromDigital = (data, duplicateResult) => {
   }
 
   return {
-    repetitionRate:  data[1] / data[0],
+    total: data.total,
+    count: data.count,
+    repetitionRate: data.count / data.total,
     textTotal,
     imageTotal,
     textRepetitionCount: textRepetitions.length,
@@ -147,10 +146,10 @@ const transfromScan = async (data, duplicateResult) => {
     data = JSON.parse(data)
   }
 
-  const ocr1 = data[2]
-  const ocr2 = data[3]
-  const matchResult = data[4]
-  const pdf1PageData = data[5]
+  const ocr1 = data.pdf1_ocr_result
+  const ocr2 = data.pdf2_ocr_result
+  const matchResult = data.text_match
+  const pdf1PageData = data.pdf1_image
 
   console.log('transfromScan', data.length, pdf1PageData.length)
 
@@ -177,24 +176,10 @@ const transfromScan = async (data, duplicateResult) => {
 
   const pdf1Pages = []
 
-  // await Promise.all(pdf1PageData.map(async (item, index) => {
-  //   await fs.writeFile(path.join(staticDir, `${index}.png`), item.data, 'base64')
-  //   item.src = `/static/ocr-pdf/${duplicateResult._id}/${index}.png`
-
-  //   pdf1Pages.push({
-  //     width: item.width,
-  //     height: item.height,
-  //     src: `/static/ocr-pdf/${duplicateResult._id}/${index}.png`
-  //   })
-  // }))
-
-
   pdf1PageData.forEach(async (item, index) => {
-
     console.log('pdf1PageData', index, item.data.length)
     fs.writeFileSync(path.join(staticDir, `${index}.png`), item.data, 'base64')
     item.src = `/static/ocr-pdf/${duplicateResult._id}/${index}.png`
-
     pdf1Pages.push({
       width: item.width,
       height: item.height,
@@ -209,7 +194,9 @@ const transfromScan = async (data, duplicateResult) => {
   }
 
   return {
-    repetitionRate:  data[1] / data[0],
+    total: data.total,
+    count: data.count,
+    repetitionRate: data.count / data.total,
     textTotal,
     imageTotal: 0,
     textRepetitionCount: ocrRepetitions.length,
