@@ -17,6 +17,7 @@ function runPythonScript(options) {
     let spanPythonArgs = args.join(' ')
     const python = spawn("python", args, {
       cwd: __dirname,
+      windowsHide: true,
     });
 
     let dataString = "";
