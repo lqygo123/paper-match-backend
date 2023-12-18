@@ -87,7 +87,7 @@ const taskQueue = new TaskQueue(TASK_CONCURRENCY);
 
 const execDuplicate = async (payload, taskId) => { 
 
-  const { biddingFileId, targetFileId, skipFileId, biddingFileName, targetFileName, mode = 'digital' } = payload;
+  const { biddingFileId, targetFileId, skipFileId, biddingFileName, targetFileName, mode = 'digital', enableImageCompare } = payload;
 
   console.log('execDuplicate', taskId, biddingFileName, '对比', targetFileName, mode)
 
@@ -153,6 +153,9 @@ const execDuplicate = async (payload, taskId) => {
     }
     if (skipFile) {
       options.exclude = path.join(__dirname, '../', 'files', skipFileId)
+    }
+    if (enableImageCompare) {
+      options.compareImage = true
     }
     console.log('runPythonScript', JSON.stringify(options))
     const { dataString, errorString, spanPythonArgs } = await runPythonScript(options);

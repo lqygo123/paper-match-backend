@@ -29,9 +29,13 @@ with HiddenPrints():
 
 with HiddenPrints(stdout=True, stderr=False):
     parser = argparse.ArgumentParser()
+
+    # PDF路径相关
     parser.add_argument("pdf1", type=str)
     parser.add_argument("pdf2", type=str)
     parser.add_argument("--exclude", type=str, default=None)
+
+    # 文字匹配参数
     parser.add_argument("--text_thresh", type=float, default=0.4)
     parser.add_argument("--edit_distance_thresh", type=float, default=0.8)
     parser.add_argument("--equal_substring_thresh", type=int, default=6)

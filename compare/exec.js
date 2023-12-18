@@ -4,13 +4,14 @@ const path = require('path')
 
 // method = "compare_digital" | "compare_scan"
 function runPythonScript(options) {
-  const { method, pdf1, pdf2, exclude } = options;
+  const { method, pdf1, pdf2, exclude, compareImage } = options;
   const pyAbsPath = path.join(__dirname, method + '.py')
   const args = [pyAbsPath];
 
   args.push(pdf1);
   args.push(pdf2);
   if (exclude) args.push("--exclude", exclude);
+  if (compareImage) args.push("--compare_image", 1);
   return new Promise((resolve) => {
 
     console.log('spawn python', ...args)
