@@ -37,6 +37,7 @@ const transfromDigital = (data, duplicateResult) => {
     data = JSON.parse(data)
   }
   const coordPdf1 = data.pdf1_text_coord
+  const coordPdf2 = data.pdf2_text_coord
   const coordImagePdf1 = data.pdf1_image_coord
   const coordImagePdf2 = data.pdf2_image_coord
   const textPdf1 = data.pdf1_text
@@ -51,16 +52,18 @@ const transfromDigital = (data, duplicateResult) => {
     const [textPdf2Page, textPdf2BlockIdx] = matchItem[1]
 
     const pdf1coord = coordPdf1[textPdf1Page][textPdf1BlockIdx]
-    // const pdf2coord = coordPdf2[textPdf2Page][textPdf2BlockIdx]
-    const pdf2text = textPdf2[textPdf2Page][textPdf2BlockIdx]
+    const pdf2coord = coordPdf2[textPdf2Page][textPdf2BlockIdx]
     const pdf1text = textPdf1[textPdf1Page][textPdf1BlockIdx]
+    const pdf2text = textPdf2[textPdf2Page][textPdf2BlockIdx]
 
     return {
       id: `text-${textPdf1Page}-${textPdf1BlockIdx}-${textPdf2Page}-${textPdf2BlockIdx}`,
       index,
       pdf1CoordStr: `${textPdf1Page}-${textPdf1BlockIdx}-${pdf1coord.join(',')}`,
+      pdf2CoordStr: `${textPdf2Page}-${textPdf2BlockIdx}-${pdf2coord.join(',')}`,
       pdf1Page: textPdf1Page,
       pdf1coord,
+      pdf2coord,
       pdf1BlockIdx: textPdf1BlockIdx,
       pdf2Page: textPdf2Page,
       pdf2BlockIdx: textPdf2BlockIdx,
@@ -79,6 +82,7 @@ const transfromDigital = (data, duplicateResult) => {
 
     const pdf1coord = coordImagePdf1[imagePdf1Page][imagePdf1BlockIdx]
     const pdf2coord = coordImagePdf2[imagePdf2Page][imagePdf2BlockIdx]
+
     const pdf2image = imagePdf2[imagePdf2Page][imagePdf2BlockIdx]
 
     // pdf2image 为 base64 数据， 对其中每一项， 写入文件到 digital-images 文件夹中，命名为 `${id}.png`
@@ -150,6 +154,7 @@ const transfromScan = async (data, duplicateResult) => {
   const ocr2 = data.pdf2_ocr_result
   const matchResult = data.text_match
   const pdf1PageData = data.pdf1_image
+  const pdf2PageData = data.pdf2_image
 
   console.log('transfromScan', data.length, pdf1PageData.length)
 
@@ -157,6 +162,7 @@ const transfromScan = async (data, duplicateResult) => {
     const [ocr1Page, ocr1BlockIdx] = matchItem[0]
     const [ocr2Page, ocr2BlockIdx] = matchItem[1]
     const pdf1coord = ocr1[ocr1Page][0][ocr1BlockIdx]
+    const pdf2coord = ocr2[ocr2Page][0][ocr2BlockIdx]
     const pdf2Content = ocr2[ocr2Page][1][ocr2BlockIdx]
     return {
       id: `text-${ocr1Page}-${ocr1BlockIdx}-${ocr2Page}-${ocr2BlockIdx}`,
@@ -165,6 +171,8 @@ const transfromScan = async (data, duplicateResult) => {
       pdf1coord,
       pdf1BlockIdx: ocr1BlockIdx,
       pdf2Page: ocr2Page,
+      pdf2coord,
+      pdf2BlockIdx: ocr2BlockIdx,
       type: 'text',
       text: pdf2Content,
     }
@@ -175,15 +183,23 @@ const transfromScan = async (data, duplicateResult) => {
   fs.ensureDirSync(staticDir)
 
   const pdf1Pages = []
+  const pdf2Pages = []
 
   pdf1PageData.forEach(async (item, index) => {
-    console.log('pdf1PageData', index, item.data.length)
-    fs.writeFileSync(path.join(staticDir, `${index}.png`), item.data, 'base64')
-    item.src = `/static/ocr-pdf/${duplicateResult._id}/${index}.png`
+    fs.writeFileSync(path.join(staticDir, `pdf1-${index}.png`), item.data, 'base64')
     pdf1Pages.push({
       width: item.width,
       height: item.height,
-      src: `/static/ocr-pdf/${duplicateResult._id}/${index}.png`
+      src: `/static/ocr-pdf/${duplicateResult._id}/pdf1-${index}.png`
+    })
+  })
+
+  pdf2PageData.forEach(async (item, index) => {
+    fs.writeFileSync(path.join(staticDir, `pdf2-${index}.png`), item.data, 'base64')
+    pdf2Pages.push({
+      width: item.width,
+      height: item.height,
+      src: `/static/ocr-pdf/${duplicateResult._id}/pdf2-${index}.png`
     })
   })
 
@@ -202,7 +218,8 @@ const transfromScan = async (data, duplicateResult) => {
     textRepetitionCount: ocrRepetitions.length,
     imageRepetitionCount: 0,
     ocrRepetitions,
-    pdf1Pages
+    pdf1Pages,
+    pdf2Pages,
   }
 }
 
