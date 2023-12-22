@@ -28,6 +28,19 @@ class TaskQueue {
     this.run();
   }
 
+  cancel(taskId) {
+    const taskItem = this.running.find(item => item.taskId === taskId);
+    if (taskItem) {
+      taskItem.cancelled = true;
+      this.complete(taskItem, false, 'Task cancelled');
+    } else {
+      const index = this.queue.findIndex(item => item.taskId === taskId);
+      if (index > -1) {
+        this.queue.splice(index, 1);
+      }
+    }
+  }
+
   createBatchTask(tasks) {
     return new Promise((resolve) => {
       let completedTasks = 0;
@@ -217,8 +230,7 @@ router.post("/create-duplicate-task", async (req, res) => {
     role: req.jwtPayload.role,
   }
 
-  const batchId = 'batch-' + Date.now() + Math.random().toString(36).substr(2);
-
+  const batchId = 'batch-' + Date.now() + Math.random().toString(36).substr(2); 
   const bachTaskPromise = taskQueue.createBatchTask(taskList.map((task, index) => {
     const taskId = Date.now() + Math.random().toString(36).substr(2);
     return {
@@ -241,19 +253,36 @@ router.post("/create-duplicate-task", async (req, res) => {
       } 
     }
   }))
-  res.json({ code: 0, message: "创建队列" });
+  res.json({ code: 0, message: "创建队列成功", data: { batchId } });
   const results = await bachTaskPromise
   console.log('create-duplicate-task down', results, reportMetaInfo)
 
-  // todo createreport 
-  const report = await Report.create({
-    results: results.map(item => item && item.result && item.result._id).filter(_id => _id),
-    metaInfo: reportMetaInfo,
-    reportTime: new Date(),
-  });
+  const resultList = results.map(item => item && item.result && item.result._id).filter(_id => _id)
 
-  console.log('create-duplicate-task report 创建成功', report._id)
+  if (resultList.length) {
+    const report = await Report.create({
+      results: results.map(item => item && item.result && item.result._id).filter(_id => _id),
+      metaInfo: reportMetaInfo,
+      reportTime: new Date(),
+    });
+    console.log('create-duplicate-task report 创建成功', report._id)
+  }
+
 })
+
+router.post("/cancel-duplicate-task", async (req, res) => {
+  const { taskId } = req.body;
+  taskQueue.cancel(taskId);
+  res.json({ code: 0, message: "取消成功" });
+});
+
+router.post("/cancel-batch-duplicate-task", async (req, res) => {
+  const { batchId } = req.body;
+  taskQueue.running.filter(item => item.batchId === batchId).forEach(item => {
+    taskQueue.cancel(item.taskId)
+  })
+  res.json({ code: 0, message: "取消成功" });
+});
 
 router.get("/current-tasks", async (req, res) => { 
   res.json({
