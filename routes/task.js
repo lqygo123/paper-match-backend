@@ -122,7 +122,7 @@ const execDuplicate = async (payload, taskId) => {
     }
     console.log('runPythonScript', JSON.stringify(options))
     const { dataString, errorString, spanPythonArgs } = await runPythonScript(options);
-    fs.writeFileSync(path.join(__dirname, '../', 'files', `output-ocr-${duplicateResult._id}.json`), dataString)
+    // fs.writeFileSync(path.join(__dirname, '../', 'files', `output-ocr-${duplicateResult._id}.json`), dataString)
     if (!dataString) { 
       const currentDate = new Date();
       const year = currentDate.getFullYear();
@@ -160,7 +160,7 @@ const execDuplicate = async (payload, taskId) => {
     console.log('runPythonScript', JSON.stringify(options))
     const { dataString, errorString, spanPythonArgs } = await runPythonScript(options);
     // console.log('runPythonScript res length', digitalData.length)
-    fs.writeFileSync(path.join(__dirname, '../', 'files', `output-digital-${duplicateResult._id}.json`), dataString)
+    // fs.writeFileSync(path.join(__dirname, '../', 'files', `output-digital-${duplicateResult._id}.json`), dataString)
     if (!dataString) { 
       const currentDate = new Date();
       const year = currentDate.getFullYear();
