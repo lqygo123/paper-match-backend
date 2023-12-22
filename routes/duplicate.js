@@ -112,14 +112,33 @@ router.get("/reports", async (req, res) => {
       query["metaInfo.participatingCompany"] = { $regex: participatingCompany };
     }
 
-    // const reports = (await Report.find(query) || []);
-    const reports = (await Report.find(query).sort({ reportTime: -1 }) || []);
-    res.json({ code: 0, message: "获取成功", data: reports });
+    const { page = 1, pageSize = 10 } = req.query;
+    const reports = await Report.find(query).sort({ reportTime: -1 }).skip((page - 1) * pageSize).limit(Number(pageSize)) || [];
+    const total = await Report.countDocuments(query);
+
+    res.json({ code: 0, message: "获取成功", data: reports, total });
   } catch (error) {
     console.log(error);
     res.status(500).json({ code: 1, message: "服务器错误", error });
   }
 });
+
+router.post("/delete-report", async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    console.log('delete-report', id)
+    const report = await Report.findById(id);
+    if (!report) {
+      return res.status(404).json({ code: 1, message: "未找到该报告" });
+    }
+    await Report.deleteOne({ _id: id });
+    res.json({ code: 0, message: "删除成功" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ code: 1, message: "服务器错误", error });
+  }
+})
 
 // get report detail
 router.get("/report/:id", async (req, res) => {
