@@ -29,6 +29,7 @@ class TaskQueue {
   }
 
   cancel(taskId) {
+    console.log('cancel', taskId)
     const taskItem = this.running.find(item => item.taskId === taskId);
     if (taskItem) {
       taskItem.cancelled = true;
@@ -278,9 +279,21 @@ router.post("/cancel-duplicate-task", async (req, res) => {
 
 router.post("/cancel-batch-duplicate-task", async (req, res) => {
   const { batchId } = req.body;
+
+  taskQueue.queue.filter(item => item.batchId === batchId).forEach(item => {
+    taskQueue.cancel(item.taskId)
+  })
+
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      resolve()
+    }, 1000)
+  })
+
   taskQueue.running.filter(item => item.batchId === batchId).forEach(item => {
     taskQueue.cancel(item.taskId)
   })
+
   res.json({ code: 0, message: "取消成功" });
 });
 
