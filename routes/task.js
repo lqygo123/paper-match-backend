@@ -11,6 +11,7 @@ class TaskQueue {
   concurry = 2; // 并发数
   queue = []; // 任务队列
   running = []; // 正在运行的任务
+  completedTasks = []; // 已完成的任务，最多 2 份
 
   constructor(concurry) {
     this.concurry = concurry || 1;
@@ -88,6 +89,7 @@ class TaskQueue {
       this.running.splice(index, 1);
     }
     taskItem.isRunning = false;
+
     if (isSuccess) {
       taskItem.onSuccess(res);
     } else {
@@ -245,6 +247,7 @@ router.post("/create-duplicate-task", async (req, res) => {
       task: async () => { 
         try {
           const res = await execDuplicate(task, taskId)
+
           console.log('task completed', res)
           return res && res._id
         } catch (error) {
@@ -267,8 +270,19 @@ router.post("/create-duplicate-task", async (req, res) => {
       reportTime: new Date(),
     });
     console.log('create-duplicate-task report 创建成功', report._id)
+    if (taskQueue.completedTasks.length > 2) { 
+      taskQueue.completedTasks.shift()
+    }
+    taskQueue.completedTasks.push({
+      batchId,
+      reportId: report._id,
+      reportMetaInfo: reportMetaInfo,
+      reportTime: new Date(),
+      creator,
+      createAt: Date.now(),
+      isFinished: true,
+    });
   }
-
 })
 
 router.post("/cancel-duplicate-task", async (req, res) => {
@@ -301,7 +315,8 @@ router.get("/current-tasks", async (req, res) => {
   res.json({
     code: 0, message: "执行成功", data: {
       running: taskQueue.running,
-      queue: taskQueue.queue
+      queue: taskQueue.queue,
+      completedTasks: taskQueue.completedTasks,
     }
   });
 })
