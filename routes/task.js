@@ -208,10 +208,31 @@ const execDuplicate = async (payload, taskId) => {
   delete abstract.imageRepetitions
   delete abstract.ocrRepetitions
   delete abstract.pdf1Pages
+  delete abstract.pdf2Pages
+
   await duplicateResult.updateOne({ abstract });
   duplicateResult.abstract = abstract
 
-  return duplicateResult
+
+  // const duplicateResult2 = await DuplicateResult.create({
+  //   biddingFileId: biddingFileId,
+  //   biddingFileName: targetFile.fileName,
+  //   targetFileId: targetFileId,
+  //   targetFileName: biddingFile.fileName,
+  //   skipFileId,
+  //   mode,
+  //   linkedResultId: duplicateResult._id,
+  //   abstract: {
+  //     ...abstract,
+  //     pdf1TextTotal: abstract.pdf2TextTotal,
+  //     pdf2TextTotal: abstract.pdf1TextTotal,
+  //     pdf1ImageTotal: abstract.pdf2ImageTotal,
+  //     pdf2ImageTotal: abstract.pdf1ImageTotal,
+  //   }
+  // });
+  
+  // return [duplicateResult, duplicateResult2]
+  return [duplicateResult]
 }
 
 router.post("/exec-duplicate", async (req, res) => {
@@ -247,9 +268,8 @@ router.post("/create-duplicate-task", async (req, res) => {
       task: async () => { 
         try {
           const res = await execDuplicate(task, taskId)
-
           console.log('task completed', res)
-          return res && res._id
+          return res
         } catch (error) {
           console.error('task err', error)
           throw error
@@ -261,11 +281,19 @@ router.post("/create-duplicate-task", async (req, res) => {
   const results = await bachTaskPromise
   console.log('create-duplicate-task down', results, reportMetaInfo)
 
-  const resultList = results.map(item => item && item.result && item.result._id).filter(_id => _id)
+  // const resultList = results.map(item => item && item.result && item.result._id).filter(_id => _id)
+  const resultList = []
+  results.forEach(item => {
+    if (item && item.result && item.result.length) {
+      item.result.forEach(resultItem => {
+        resultList.push(resultItem._id)
+      })
+    }
+  })
 
   if (resultList.length) {
     const report = await Report.create({
-      results: results.map(item => item && item.result && item.result._id).filter(_id => _id),
+      results: resultList,
       metaInfo: reportMetaInfo,
       reportTime: new Date(),
     });

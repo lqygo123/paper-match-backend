@@ -23,6 +23,7 @@ const duplicateResultSchema = new mongoose.Schema({
   targetFileName: String,
   skipFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
   mode: String,
+  linkedResultId: { type: mongoose.Schema.Types.ObjectId, ref: 'DuplicateResult' },
   detail: { type: mongoose.Schema.Types.ObjectId, ref: 'DuplicateResultDetail' },
   abstract: Object
 });

@@ -12,9 +12,18 @@ router.get("/duplicate-result/:id", async (req, res) => {
     if (!duplicateResult) {
       return res.status(404).json({ code: 1, message: "未找到该比对" });
     }
-    // const detail = await DuplicateResultDetail.findById(duplicateResult.detail);
+    let linkResult 
+    if (duplicateResult.linkedResultId) { 
+      linkResult = await DuplicateResult.findById(duplicateResult.linkedResultId);
+    }
 
-    const filePath = path.join(__dirname, '../', 'files', `result-${duplicateResult._id}.json`)
+    // const detail = await DuplicateResultDetail.findById(duplicateResult.detail);
+    let filePath 
+    if (linkResult) {
+      filePath = path.join(__dirname, '../', 'files', `result-${linkResult._id}.json`)
+    } else {
+      filePath = path.join(__dirname, '../', 'files', `result-${duplicateResult._id}.json`)
+    }
     // const detail = fs.readFileSync(filePath, 'utf-8')
 
     // 使用 流读取文件

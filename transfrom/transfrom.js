@@ -102,28 +102,38 @@ const transfromDigital = (data, duplicateResult) => {
     }
   });
 
-  // textTotal 计算 text_pdf1 中总共有多少个块
+  let pdf1TextTotal = 0
+  let pdf1ImageTotal = 0
+  let pdf2TextTotal = 0
+  let pdf2ImageTotal = 0
 
-  let textTotal = 0
   for (let i = 0; i < textPdf1.length; i++) {
     const page = textPdf1[i]
-    textTotal += page.length
+    pdf1TextTotal += page.length
   }
-  
-  let imageTotal = 0
+
   for (let i = 0; i < imagePdf1.length; i++) {
     const page = imagePdf1[i]
-    imageTotal += page.length
+    pdf1ImageTotal += page.length
+  }
+
+  for (let i = 0; i < textPdf2.length; i++) {
+    const page = textPdf2[i]
+    pdf2TextTotal += page.length
+  }
+
+  for (let i = 0; i < imagePdf2.length; i++) {
+    const page = imagePdf2[i]
+    pdf2ImageTotal += page.length
   }
 
   return {
-    total: data.total,
-    count: data.count,
-    repetitionRate: data.count / data.total,
-    textTotal,
-    imageTotal,
-    textRepetitionCount: textRepetitions.length,
-    imageRepetitionCount: imageRepetitions.length,
+    pdf1TextTotal,
+    pdf1ImageTotal,
+    pdf2TextTotal,
+    pdf2ImageTotal,
+    textRepetitionCount: textRepetitions.length || 0,
+    imageRepetitionCount: imageRepetitions.length || 0,
     textRepetitions,
     imageRepetitions
   }
@@ -203,19 +213,31 @@ const transfromScan = async (data, duplicateResult) => {
     })
   })
 
-  let textTotal = 0
-  for (let i = 0; i < ocr1.length; i++) {
-    const page = ocr1[i][0]
-    textTotal += page[0].length
+  // let textTotal = 0
+  // for (let i = 0; i < ocr1.length; i++) {
+  //   const page = ocr1[i][0]
+  //   textTotal += page[0].length
+  // }
+
+  let pdf1TextTotal = 0
+  let pdf2TextTotal = 0
+
+  for (let i = 0; i < pdf1PageData.length; i++) {
+    const page = ocr1[i][1]
+    pdf1TextTotal += page.length
+  }
+
+  for (let i = 0; i < pdf2PageData.length; i++) {
+    const page = ocr2[i][1]
+    pdf2TextTotal += page.length
   }
 
   return {
-    total: data.total,
-    count: data.count,
-    repetitionRate: data.count / data.total,
-    textTotal,
-    imageTotal: 0,
-    textRepetitionCount: ocrRepetitions.length,
+    pdf1TextTotal,
+    pdf1ImageTotal: 0,
+    pdf2TextTotal,
+    pdf2ImageTotal: 0,
+    textRepetitionCount: ocrRepetitions.length || 0,
     imageRepetitionCount: 0,
     ocrRepetitions,
     pdf1Pages,
