@@ -147,10 +147,12 @@ const execDuplicate = async (payload, taskId) => {
       const hours = String(currentDate.getHours()).padStart(2, '0');
       const minutes = String(currentDate.getMinutes()).padStart(2, '0');
       const seconds = String(currentDate.getSeconds()).padStart(2, '0');
-      const formattedDate = `${year}_${month}_${day}_${hours}:${minutes}:${seconds}`;
+      const formattedDate = `${year}_${month}_${day}_${hours}_${minutes}_${seconds}`;
       const logPath = path.join(__dirname, '../', 'error-logs')
       fs.ensureDirSync(logPath)
-      fs.writeFileSync(path.join(logPath, `error_log_${formattedDate}.log`), errorString)
+
+      // 文件已经存在，覆盖，不存在则创建
+      fs.writeFileSync(path.join(logPath, `error_log_${formattedDate}.log`), errorString, { encoding: 'utf-8', flag: 'w' })
       console.error('算法执行失败 输出 stdout 为空，算法运行参数：',spanPythonArgs, '错误日志:', path.join(logPath, `error_log_${formattedDate}.log`))
       throw new Error('算法执行失败')
     }
