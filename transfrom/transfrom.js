@@ -32,7 +32,7 @@ const path = require('path')
 - text_match列表中的每个元素都是 (x,a), (y,b)格式的，表示PDF1的第x页的第a个box和PDF2的y页的第b个box匹配到一起
 - image_match列表中的每个元素也是(x,a), (y,b)格式的，含义同上
 */
-const transfromDigital = (data, duplicateResult) => { 
+const transfromDigital = async (data, duplicateResult) => { 
   if (typeof data === 'string') { 
     data = JSON.parse(data)
   }
@@ -72,9 +72,13 @@ const transfromDigital = (data, duplicateResult) => {
       pdf1text,
     }
   })
-  
+
   const staticDir = path.join(__dirname, `../static/digital-images/${duplicateResult._id}`)
+  const compareDir = path.join(__dirname, '../compare')
   fs.ensureDirSync(staticDir)
+
+  const copyFilePromises = []
+  let tempFileBaseDir = ''
 
   const imageRepetitions = imageMatch.map((matchItem, index) => {
     const [imagePdf1Page, imagePdf1BlockIdx] = matchItem[0]
@@ -85,8 +89,9 @@ const transfromDigital = (data, duplicateResult) => {
 
     const pdf2image = imagePdf2[imagePdf2Page][imagePdf2BlockIdx]
 
-    // pdf2image 为 base64 数据， 对其中每一项， 写入文件到 digital-images 文件夹中，命名为 `${id}.png`
-    fs.writeFileSync(path.join(staticDir, `${index}.png`), pdf2image, 'base64')
+    const fileBaseName = path.basename(pdf2image)
+    copyFilePromises.push(fs.copy(path.join(compareDir, pdf2image), path.join(staticDir, fileBaseName)))
+    if (!tempFileBaseDir) tempFileBaseDir = path.dirname(path.join(compareDir, pdf2image))
 
     return {
       id: `image-${imagePdf1Page}-${imagePdf1BlockIdx}-${imagePdf2Page}-${imagePdf2BlockIdx}`,
@@ -98,9 +103,13 @@ const transfromDigital = (data, duplicateResult) => {
       pdf2coord,
       pdf2BlockIdx: imagePdf2BlockIdx,
       type: 'image',
-      imgSrc: `/static/digital-images/${duplicateResult._id}/${index}.png`,
+      imgSrc: `/static/digital-images/${duplicateResult._id}/${fileBaseName}`,
     }
   });
+  await Promise.all(copyFilePromises)
+  if (fs.existsSync(tempFileBaseDir)) { 
+    fs.remove(tempFileBaseDir)
+  }
 
   let pdf1TextTotal = 0
   let pdf1ImageTotal = 0
@@ -166,8 +175,6 @@ const transfromScan = async (data, duplicateResult) => {
   const pdf1PageData = data.pdf1_image
   const pdf2PageData = data.pdf2_image
 
-  console.log('transfromScan', data.length, pdf1PageData.length)
-
   const ocrRepetitions = matchResult.map((matchItem, index) => {
     const [ocr1Page, ocr1BlockIdx] = matchItem[0]
     const [ocr2Page, ocr2BlockIdx] = matchItem[1]
@@ -188,36 +195,42 @@ const transfromScan = async (data, duplicateResult) => {
     }
   }); 
 
-  // pdf1Pages.data 为 base64 数据， 对其中每一项， 写入文件到 output_scan_pdf1 文件夹中，命名为 `pdf1-${index}.png`
+  // pdf1Pages.data 为 相对路径， 对其中每一项， 拷贝到 static/ocr-pdf/${duplicateResult._id} 目录下
   const staticDir = path.join(__dirname, `../static/ocr-pdf/${duplicateResult._id}`)
+  const compareDir = path.join(__dirname, '../compare')
   fs.ensureDirSync(staticDir)
 
   const pdf1Pages = []
   const pdf2Pages = []
 
-  pdf1PageData.forEach(async (item, index) => {
-    fs.writeFileSync(path.join(staticDir, `pdf1-${index}.png`), item.data, 'base64')
+  const copyFilePromises = []
+  let tempFileBaseDir = ''
+
+  pdf1PageData.forEach(async (item) => {
+    const fileName = path.basename(item.data)
+    copyFilePromises.push(fs.copy(path.join(compareDir, item.data), path.join(staticDir, fileName)))
     pdf1Pages.push({
       width: item.width,
       height: item.height,
-      src: `/static/ocr-pdf/${duplicateResult._id}/pdf1-${index}.png`
+      src: `/static/ocr-pdf/${duplicateResult._id}/${fileName}`
     })
   })
 
-  pdf2PageData.forEach(async (item, index) => {
-    fs.writeFileSync(path.join(staticDir, `pdf2-${index}.png`), item.data, 'base64')
+  pdf2PageData.forEach(async (item) => {
+    const fileName = path.basename(item.data)
+    copyFilePromises.push(fs.copy(path.join(compareDir, item.data), path.join(staticDir, fileName)))
+    if (!tempFileBaseDir) tempFileBaseDir = path.dirname(path.join(compareDir, item.data))
     pdf2Pages.push({
       width: item.width,
       height: item.height,
-      src: `/static/ocr-pdf/${duplicateResult._id}/pdf2-${index}.png`
+      src: `/static/ocr-pdf/${duplicateResult._id}/${fileName}`
     })
   })
 
-  // let textTotal = 0
-  // for (let i = 0; i < ocr1.length; i++) {
-  //   const page = ocr1[i][0]
-  //   textTotal += page[0].length
-  // }
+  await Promise.all(copyFilePromises)
+  if (fs.existsSync(tempFileBaseDir)) { 
+    fs.remove(tempFileBaseDir)
+  }
 
   let pdf1TextTotal = 0
   let pdf2TextTotal = 0
@@ -249,14 +262,3 @@ module.exports = {
   transfromScan,
   transfromDigital,
 }
-
-// const scan = require('./input_scan.json')
-// const digital = require('./input_digital.json')
-
-// const exec = async () => {
-//   const result = await transfromScan(scan, { _id: 'mockID'})
-//   console.log(result)
-// }
-
-// fs.writeFileSync('./output_scan_transfromed.json', JSON.stringify(transfromScan(scan, { _id: 'mockID'}), null, 2))
-// fs.writeFileSync('./output_digital.json', JSON.stringify(transfromDigital(digital), null, 2))
