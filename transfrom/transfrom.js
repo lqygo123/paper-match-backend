@@ -142,6 +142,8 @@ const transfromDigital = async (data, duplicateResult) => {
   }
 
   return {
+    total: data.total,
+    count: data.count,
     pdf1TextTotal,
     pdf1ImageTotal,
     pdf2TextTotal,
@@ -254,6 +256,8 @@ const transfromScan = async (data, duplicateResult) => {
   }
 
   return {
+    total: data.total,
+    count: data.count,
     pdf1TextTotal,
     pdf1ImageTotal: 0,
     pdf2TextTotal,
