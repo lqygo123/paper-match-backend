@@ -106,7 +106,12 @@ const transfromDigital = async (data, duplicateResult) => {
       imgSrc: `/static/digital-images/${duplicateResult._id}/${fileBaseName}`,
     }
   });
-  await Promise.all(copyFilePromises)
+  // 有报错依旧继续
+  // await Promise.all(copyFilePromises)
+  await Promise.all(copyFilePromises).catch((err) => {
+    console.log(err)
+  })
+
   if (fs.existsSync(tempFileBaseDir)) { 
     fs.remove(tempFileBaseDir)
   }
@@ -227,7 +232,10 @@ const transfromScan = async (data, duplicateResult) => {
     })
   })
 
-  await Promise.all(copyFilePromises)
+  await Promise.all(copyFilePromises).catch((err) => {
+    console.log(err)
+  })
+
   if (fs.existsSync(tempFileBaseDir)) { 
     fs.remove(tempFileBaseDir)
   }

@@ -156,6 +156,11 @@ const execDuplicate = async (payload, taskId) => {
       console.error('算法执行失败 输出 stdout 为空，算法运行参数：',spanPythonArgs, '错误日志:', path.join(logPath, `error_log_${formattedDate}.log`))
       throw new Error('算法执行失败')
     }
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        resolve()
+      }, 2000);
+    })
     result = await transfromScan(dataString, duplicateResult)
   }
 
@@ -194,7 +199,11 @@ const execDuplicate = async (payload, taskId) => {
       console.error('算法执行失败 输出 stdout 为空，算法运行参数：',spanPythonArgs, '错误日志:', path.join(logPath, `error_log_${formattedDate}.log`))
       throw new Error('算法执行失败')
     }
-
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        resolve()
+      }, 5000);
+    })
     result = await transfromDigital(dataString, duplicateResult)
   }
 
